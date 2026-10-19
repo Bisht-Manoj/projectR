@@ -1,0 +1,42 @@
+name: Gemini Developer Assistant
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  gemini_assist:
+    runs-on: ubuntu-latest
+    if: contains(github.event.comment.body, '/gemini-fix')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          # Fetches the PR branch instead of the main branch
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Generate Fix with Gemini
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v1
+        with:
+          api-key: ${{ secrets.GEMINI_API_KEY }}
+          # We instruct Gemini to output ONLY the raw code back to the console
+          prompt: |
+            You are a GitHub bot. Analyze this request: "${{ github.event.comment.body }}". 
+            Provide ONLY the exact updated file content. Do not include markdown wraps like ```html or ```javascript, do not include explanations or conversational filler.
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "gemini-bot"
+          git config --global user.email "gemini-bot@google.com"
+          
+          # Target the file you want to change (you can adjust this path dynamically)
+          echo "${{ steps.gemini.outputs.response }}" > index.html
+          
+          git add index.html
+          git commit -m "🤖 Auto-fix applied by Gemini"
+          git push
