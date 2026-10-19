@@ -19,7 +19,7 @@ jobs:
 
       - name: Gemini File Generator
         id: gemini
-        uses: google-github-actions/run-gemini-cli@v1
+        uses: google-github-actions/run-gemini-cli@v0
         with:
           api_key: \${{ secrets.GEMINI_API_KEY }}
           # We explicitly command the AI structure to only output code, ensuring it doesn't say "I cannot help you"
