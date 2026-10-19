@@ -1,4 +1,4 @@
-name: Gemini Developer Assistant
+name: Gemini Automated Code Writer
 on:
   issue_comment:
     types: [created]
@@ -9,34 +9,37 @@ permissions:
   issues: write
 
 jobs:
-  gemini_assist:
+  gemini_write:
     runs-on: ubuntu-latest
-    if: contains(github.event.comment.body, '/gemini-fix')
+    # Triggers only when you type /gemini-write in a comment
+    if: contains(github.event.comment.body, '/gemini-write')
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          # Fetches the PR branch instead of the main branch
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
-      - name: Generate Fix with Gemini
+      - name: Gemini File Generator
         id: gemini
         uses: google-github-actions/run-gemini-cli@v1
         with:
-          api-key: ${{ secrets.GEMINI_API_KEY }}
-          # We instruct Gemini to output ONLY the raw code back to the console
+          api_key: \${{ secrets.GEMINI_API_KEY }}
+          # We explicitly command the AI structure to only output code, ensuring it doesn't say "I cannot help you"
           prompt: |
-            You are a GitHub bot. Analyze this request: "${{ github.event.comment.body }}". 
-            Provide ONLY the exact updated file content. Do not include markdown wraps like ```html or ```javascript, do not include explanations or conversational filler.
+            You are an automated code generator inside a GitHub Actions pipeline. 
+            User request: "\${{ github.event.comment.body }}"
+            
+            Task: Provide ONLY the raw updated code for the requested changes. Do not include conversational text, do not say "I cannot access your system", and do not wrap your answer in markdown code blocks like ```. Just output the raw file contents.
 
-      - name: Commit and Push Changes
+      - name: Apply Changes and Push to Git
         run: |
-          git config --global user.name "gemini-bot"
-          git config --global user.email "gemini-bot@google.com"
+          # 1. Configure the git bot profile
+          git config --global user.name "gemini-bot[bot]"
+          git config --global user.email "gemini-bot@://github.com"
           
-          # Target the file you want to change (you can adjust this path dynamically)
-          echo "${{ steps.gemini.outputs.response }}" > index.html
+          # 2. Save Gemini's direct output into your file
+          # (For this example, it overwrites main.js. You can change this to any file)
+          echo "${{ steps.gemini.outputs.text }}" > main.js
           
-          git add index.html
-          git commit -m "🤖 Auto-fix applied by Gemini"
+          # 3. Stage, commit, and push the changes back to your branch
+          git add main.js
+          git commit -m "🤖 Auto-code changes written by Gemini"
           git push
