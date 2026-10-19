@@ -23,7 +23,7 @@ jobs:
         env:
           GEMINI_CLI_TRUST_WORKSPACE: true
         with:
-          gemini_api_key: \${{ secrets.GEMINI_API_KEY }}
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           prompt: |
             You are an automated code generator inside a GitHub Actions pipeline. 
             User request: "\${{ github.event.comment.body }}"
